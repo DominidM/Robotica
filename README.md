@@ -18,8 +18,8 @@ Bienvenido/a al repositorio de **Dimsor**, un chatbot de apoyo emocional, conver
 ### 1. Clona este repositorio
 
 ```sh
-git clone https://github.com/TU_USUARIO/TU_REPO.git
-cd TU_REPO
+git clone https://github.com/DominidM/Robotica.git
+cd Robotica
 ```
 
 ### 2. Crea un entorno virtual (opcional pero recomendado)
@@ -75,7 +75,7 @@ pip install tensorflow keras numpy nltk
 
 ## Especificaciones técnicas
 
-- **Python**: 3.7 o superior recomendado.
+- **Python**: 3.10.0
 - **Librerías**: Tensorflow, Keras, Numpy, NLTK.
 - **Idioma**: Español.
 - **Entrenamiento**: Basado en el archivo `intents.json`.
@@ -105,7 +105,7 @@ Gracias por compartir cómo te sientes. Si quieres hablar más sobre eso, aquí 
 
 ## Créditos
 
-Desarrollado por [TU NOMBRE O EQUIPO].  
+Desarrollado por [SolveGrades].  
 Inspirado en modelos conversacionales y datasets de uso libre.
 
 ---
