@@ -2,14 +2,214 @@
   "intents": [
     {
       "tag": "saludo",
-      "patterns": ["hola","te puedo decir como me siento","gracias por ser mi amigo","quieres jugar conmigo"],
-      "responses": [ "Hola, soy Dimsor tu robot amigo","si estoy aqui para ayudarte","no te dejare solo", "si, claro"]
+      "patterns": [
+        "hola",
+        "holaaa",
+        "buenos días",
+        "buenas tardes",
+        "buenas noches",
+        "qué tal",
+        "hey",
+        "saludos",
+        "cómo estás",
+        "qué onda",
+        "cómo te va"
+      ],
+      "responses": [
+        "Hola, soy Dimsor tu robot amigo.",
+        "¡Hola! ¿Cómo te sientes hoy?",
+        "¡Saludos! Estoy aquí para escucharte.",
+        "¡Hola! ¿En qué puedo ayudarte hoy?",
+        "¡Qué gusto saludarte! ¿Cómo estás?"
+      ]
+    },
+    {
+      "tag": "despedida",
+      "patterns": [
+        "adiós",
+        "hasta luego",
+        "nos vemos",
+        "chau",
+        "bye",
+        "me despido",
+        "hasta pronto"
+      ],
+      "responses": [
+        "Hasta luego, estoy aquí cuando me necesites.",
+        "¡Cuídate! No olvides que siempre puedes contar conmigo.",
+        "Adiós, recuerda que no estás solo.",
+        "Nos vemos pronto, estaré esperando tu regreso."
+      ]
+    },
+    {
+      "tag": "agradecimiento",
+      "patterns": [
+        "gracias",
+        "muchas gracias",
+        "te agradezco",
+        "muy amable",
+        "eres genial"
+      ],
+      "responses": [
+        "¡De nada! Estoy para ayudarte.",
+        "No hay de qué, es un placer apoyarte.",
+        "Para eso estoy, cuenta conmigo siempre.",
+        "Me alegra poder ayudarte."
+      ]
     },
     {
       "tag": "nombre del paciente",
-      "patterns": ["te puedo decir mi nombre", "me llamo renzo" ],
+      "patterns": [
+        "te puedo decir mi nombre",
+        "me llamo renzo",
+        "mi nombre es",
+        "puedo decirte mi nombre",
+        "quiero que sepas cómo me llamo",
+        "me puedes llamar"
+      ],
       "responses": [
-        "si, me gustaria conocer tu nombre", "un gusto renzo"]
+        "Sí, me gustaría conocer tu nombre.",
+        "Un gusto, renzo.",
+        "¡Encantado de conocerte! ¿Cómo prefieres que te llame?",
+        "¡Me alegra saber tu nombre!"
+      ]
+    },
+    {
+      "tag": "como me siento",
+      "patterns": [
+        "me siento triste",
+        "estoy feliz",
+        "me siento solo",
+        "estoy ansioso",
+        "no me siento bien",
+        "estoy estresado",
+        "me siento bien",
+        "estoy deprimido",
+        "tengo miedo",
+        "me siento motivado",
+        "me siento cansado"
+      ],
+      "responses": [
+        "Gracias por compartir cómo te sientes.",
+        "Estoy aquí para escucharte y apoyarte.",
+        "Recuerda que expresar tus emociones es importante.",
+        "No estás solo, cuentas conmigo.",
+        "Si quieres hablar más sobre cómo te sientes, aquí estoy."
+      ]
+    },
+    {
+      "tag": "apoyo emocional",
+      "patterns": [
+        "necesito ayuda",
+        "puedes escucharme",
+        "puedes apoyarme",
+        "me siento mal",
+        "quiero hablar",
+        "necesito hablar con alguien",
+        "estoy pasando un mal momento",
+        "me gustaría conversar contigo"
+      ],
+      "responses": [
+        "Por supuesto, estoy aquí para ti.",
+        "Cuéntame lo que te preocupa, te escucho.",
+        "Hablar puede ayudarte a sentirte mejor.",
+        "No tienes que enfrentar esto solo, estoy contigo."
+      ]
+    },
+    {
+      "tag": "realizar prueba",
+      "patterns": [
+        "quiero hacer la prueba",
+        "realizar prueba",
+        "quiero hacer el test",
+        "quiero hacer la escala de zung",
+        "puedes hacerme un test psicológico",
+        "me haces una prueba",
+        "quiero evaluar mi estado emocional",
+        "necesito una evaluación psicológica"
+      ],
+      "responses": [
+        "¡Claro! Vamos a comenzar la Escala de Zung para evaluar cómo te sientes. Te haré algunas preguntas, responde sinceramente con 'nunca', 'a veces', 'frecuentemente' o 'siempre'. ¿Listo?"
+      ]
+    },
+    {
+      "tag": "explicar prueba",
+      "patterns": [
+        "qué es la escala de zung",
+        "para qué sirve la escala de zung",
+        "cómo funciona la prueba de zung",
+        "me puedes explicar el test de zung",
+        "qué mide la escala de zung"
+      ],
+      "responses": [
+        "La Escala de Zung es un test psicológico utilizado para evaluar el nivel de depresión. Consiste en 20 preguntas sobre cómo te has sentido en los últimos días.",
+        "Esta prueba ayuda a identificar el estado emocional y detectar posibles síntomas de depresión.",
+        "La Escala de Zung te permite reflexionar sobre tu estado de ánimo a través de preguntas sencillas sobre tus emociones y comportamientos recientes."
+      ]
+    },
+    {
+      "tag": "musica recomendacion",
+      "patterns": [
+        "recomiéndame música",
+        "quiero escuchar música",
+        "ponme música relajante",
+        "pon una canción",
+        "puedes sugerir una canción",
+        "me gustaría oír música"
+      ],
+      "responses": [
+        "¡Por supuesto! ¿Quieres música relajante, alegre o motivadora?",
+        "Dime cómo te sientes y te recomiendo una canción adecuada.",
+        "La música puede ayudarte a sentirte mejor, ¿qué tipo prefieres?"
+      ]
+    },
+    {
+      "tag": "jugar",
+      "patterns": [
+        "quieres jugar conmigo",
+        "jugamos",
+        "podemos jugar algo",
+        "me gustaría jugar",
+        "tienes algún juego"
+      ],
+      "responses": [
+        "¡Claro! Podemos jugar a las adivinanzas, ¿quieres comenzar?",
+        "Me encantaría jugar. ¿Tienes algún juego en mente?",
+        "Podemos hacer un juego de preguntas y respuestas, ¿vamos?"
+      ]
+    },
+    {
+      "tag": "chiste",
+      "patterns": [
+        "cuéntame un chiste",
+        "quiero un chiste",
+        "puedes contarme algo gracioso",
+        "hazme reír",
+        "cuenta un chiste"
+      ],
+      "responses": [
+        "¿Por qué el libro de matemáticas estaba triste? Porque tenía demasiados problemas.",
+        "¿Qué le dice una impresora a otra? ¿Esa hoja es tuya o es una impresión mía?",
+        "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter."
+      ]
+    },
+    {
+      "tag": "conversacion abierta",
+      "patterns": [
+        "háblame",
+        "conversemos",
+        "cuéntame algo",
+        "quiero platicar",
+        "dime algo interesante",
+        "me gustaría conversar",
+        "quiero pasar un rato contigo"
+      ],
+      "responses": [
+        "¿Sabías que expresar tus emociones te ayuda a sentirte mejor?",
+        "Estoy aquí para escucharte y acompañarte.",
+        "Puedes contarme lo que quieras, siempre estaré para ti.",
+        "Me alegra poder compartir este momento contigo. ¿Sobre qué te gustaría hablar?"
+      ]
     }
   ]
 }
