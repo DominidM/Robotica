@@ -1,0 +1,15 @@
+{
+  "intents": [
+    {
+      "tag": "saludo",
+      "patterns": ["hola","te puedo decir como me siento","gracias por ser mi amigo","quieres jugar conmigo"],
+      "responses": [ "Hola, soy Dimsor tu robot amigo","si estoy aqui para ayudarte","no te dejare solo", "si, claro"]
+    },
+    {
+      "tag": "nombre del paciente",
+      "patterns": ["te puedo decir mi nombre", "me llamo renzo" ],
+      "responses": [
+        "si, me gustaria conocer tu nombre", "un gusto renzo"]
+    }
+  ]
+}
