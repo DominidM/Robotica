@@ -1,0 +1,130 @@
+{
+  "intents": [
+    {
+      "tag": "realizar prueba",
+      "patterns": [
+        "quiero hacer la prueba",
+        "quiero realizar la prueba",
+        "quiero el test psicológico",
+        "quiero hacer un test psicológico",
+        "quiero la prueba de zung",
+        "quiero un test de depresión",
+        "puedo hacer la prueba psicológica",
+        "hazme la prueba psicológica",
+        "puedes hacerme el test",
+        "test zung",
+        "prueba zung",
+        "test psicológico",
+        "hazme un test psicológico",
+        "quiero evaluar mi estado emocional",
+        "evalúa mi estado mental",
+        "evaluación psicológica",
+        "puedo hacer el test de zung",
+        "podrías iniciar la prueba de zung",
+        "necesito hacer el test psicológico",
+        "me gustaría una evaluación psicológica",
+        "iniciar test psicológico",
+        "iniciar prueba",
+        "iniciar test de depresión",
+        "quiero comenzar la prueba de zung",
+        "comenzar test psicológico",
+        "por favor realiza el test de zung"
+      ],
+      "responses": [
+        "Vamos a comenzar la prueba psicológica de Zung.",
+        "Iniciando el test psicológico.",
+        "Perfecto, empezamos la prueba de Zung.",
+        "Claro, iniciaremos la evaluación psicológica de Zung.",
+        "Por supuesto, empezamos el test de Zung."
+      ]
+    },
+    {
+      "tag": "saludo",
+      "patterns": [
+        "hola",
+        "buenos días",
+        "buenas tardes",
+        "buenas noches",
+        "hey",
+        "saludos",
+        "qué tal",
+        "cómo estás",
+        "buen día",
+        "hello",
+        "hi",
+        "holi",
+        "saluditos",
+        "qué onda",
+        "buenas"
+      ],
+      "responses": [
+        "¡Hola! ¿En qué puedo ayudarte?",
+        "Hola, ¿cómo estás?",
+        "¡Saludos!",
+        "¡Hola! Bienvenido, ¿cómo te sientes hoy?",
+        "¡Buen día! ¿En qué te puedo apoyar?",
+        "¡Hola! ¿Cómo te puedo ayudar?"
+      ]
+    },
+    {
+      "tag": "despedida",
+      "patterns": [
+        "adiós",
+        "hasta luego",
+        "nos vemos",
+        "me despido",
+        "chau",
+        "bye",
+        "hasta pronto",
+        "gracias, eso es todo",
+        "termino aquí",
+        "me voy",
+        "salir"
+      ],
+      "responses": [
+        "Hasta luego. Recuerda que puedes volver cuando quieras.",
+        "Adiós, cuídate mucho.",
+        "Nos vemos, fue un gusto ayudarte.",
+        "¡Hasta la próxima!",
+        "Que tengas un buen día."
+      ]
+    },
+    {
+      "tag": "agradecimiento",
+      "patterns": [
+        "gracias",
+        "muchas gracias",
+        "te lo agradezco",
+        "gracias por tu ayuda",
+        "muy amable",
+        "agradezco tu apoyo",
+        "mil gracias"
+      ],
+      "responses": [
+        "¡Con gusto! ¿Hay algo más en lo que pueda ayudarte?",
+        "Para eso estoy, cuando quieras.",
+        "No hay de qué, ¿en qué más te ayudo?",
+        "¡De nada! Si necesitas algo más, aquí estoy."
+      ]
+    },
+    {
+      "tag": "ayuda",
+      "patterns": [
+        "ayuda",
+        "necesito ayuda",
+        "puedes ayudarme",
+        "cómo te uso",
+        "qué puedes hacer",
+        "qué funciones tienes",
+        "qué sabes hacer",
+        "cómo me puedes ayudar",
+        "explícame cómo funcionas"
+      ],
+      "responses": [
+        "Puedo conversar contigo, ayudarte a iniciar el test de Zung para evaluar tu estado emocional, y responder a preguntas generales. ¿Qué necesitas?",
+        "Te puedo ayudar con una conversación, iniciar pruebas psicológicas como el test de Zung, o responder tus dudas. ¿Qué deseas hacer?",
+        "¿Quieres realizar una prueba psicológica, conversar, o tienes alguna pregunta específica?"
+      ]
+    }
+  ]
+}
