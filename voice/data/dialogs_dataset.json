@@ -11586,5 +11586,165 @@
   {
     "input": "Pero hago todo mi escritura con mi mano derecha.",
     "output": "Comience a escribir en su lugar.De esa manera, su mano izquierda hará la mitad del trabajo."
+  },
+  {
+    "input": "Me duele la cabeza desde hace días.",
+    "output": "¿Has presentado fiebre o algún otro síntoma además del dolor de cabeza?"
+  },
+  {
+    "input": "También he tenido fiebre.",
+    "output": "¿La fiebre es constante o aparece y desaparece? ¿Notas algún otro malestar?"
+  },
+  {
+    "input": "Siento mareo y náuseas.",
+    "output": "¿Has vomitado o has notado sensibilidad a la luz o el sonido?"
+  },
+  {
+    "input": "Sí, he vomitado dos veces.",
+    "output": "Es importante que te hidrates. Si los síntomas persisten o empeoran, consulta a un médico pronto."
+  },
+  {
+    "input": "Tengo dolor en el pecho al respirar.",
+    "output": "¿El dolor es intenso? ¿Se acompaña de dificultad para respirar o sudoración?"
+  },
+  {
+    "input": "Sí, me cuesta respirar y sudo mucho.",
+    "output": "Por favor acude a urgencias inmediatamente. Puede ser una situación grave."
+  },
+  {
+    "input": "Me siento muy cansado últimamente.",
+    "output": "¿Tuviste cambios en el sueño, alimentación o mucho estrés recientemente?"
+  },
+  {
+    "input": "No duermo bien y como poco.",
+    "output": "El cansancio puede estar relacionado. Intenta mejorar tus hábitos y consultar a un profesional si continúa."
+  },
+  {
+    "input": "Tengo tos con flema desde hace semanas.",
+    "output": "¿La flema es de color amarillo, verde o tiene sangre?"
+  },
+  {
+    "input": "Sale flema amarilla.",
+    "output": "Eso puede indicar una infección. Si tienes fiebre o dificultad respiratoria, consulta a tu médico."
+  },
+  {
+    "input": "Me duelen las articulaciones al despertar.",
+    "output": "¿El dolor disminuye durante el día o persiste todo el tiempo?"
+  },
+  {
+    "input": "Disminuye con el movimiento.",
+    "output": "Eso puede ser rigidez matutina, común en algunas enfermedades como la artritis. Te recomiendo valoración médica."
+  },
+  {
+    "input": "Llevo varios días con diarrea.",
+    "output": "¿Has notado sangre en las heces o pérdida de peso?"
+  },
+  {
+    "input": "No, solo heces líquidas, sin sangre.",
+    "output": "Mantente hidratado y vigila si aparecen otros síntomas. Si la diarrea persiste más de 3 días, consulta a un médico."
+  },
+  {
+    "input": "Tengo un lunar que ha cambiado de forma.",
+    "output": "¿El lunar ha cambiado de color, tamaño o presenta bordes irregulares?"
+  },
+  {
+    "input": "Sí, ha crecido y tiene colores distintos.",
+    "output": "Te recomiendo acudir a un dermatólogo lo antes posible para una revisión."
+  },
+  {
+    "input": "Siento palpitaciones rápidas y fuertes.",
+    "output": "¿Te sucede en reposo o al hacer esfuerzo? ¿Notas mareos o desmayos?"
+  },
+  {
+    "input": "Sucede en reposo y me siento mareado.",
+    "output": "Es importante que busques atención médica pronto para descartar problemas cardíacos."
+  },
+  {
+    "input": "Tengo dolor lumbar después de cargar peso.",
+    "output": "¿El dolor baja hacia la pierna o solo se queda en la espalda?"
+  },
+  {
+    "input": "Baja por la pierna izquierda.",
+    "output": "Podría tratarse de ciática. Evita cargar peso y consulta a un especialista si el dolor persiste."
+  },
+  {
+    "input": "Me siento triste casi todos los días.",
+    "output": "¿Puedes contarme desde cuándo te sientes así? ¿Ha habido algún motivo reciente que te haya afectado?"
+  },
+  {
+    "input": "No tengo ganas de hacer nada, ni siquiera las cosas que antes me gustaban.",
+    "output": "Eso puede ser un síntoma de depresión. ¿Has notado cambios en tu apetito o en tu sueño?"
+  },
+  {
+    "input": "He estado comiendo menos y tengo problemas para dormir.",
+    "output": "Los cambios en el apetito y el sueño pueden indicar un estado de ánimo bajo. ¿Te sientes con poca energía o fatigado durante el día?"
+  },
+  {
+    "input": "Sí, me siento cansado todo el tiempo.",
+    "output": "Es importante que hables con un profesional de la salud mental. ¿Has pensado en buscar ayuda o apoyo?"
+  },
+  {
+    "input": "Me cuesta concentrarme en el trabajo y me distraigo fácilmente.",
+    "output": "¿Esto ha afectado tu desempeño laboral o tus relaciones personales?"
+  },
+  {
+    "input": "Sí, he tenido problemas en el trabajo por eso.",
+    "output": "Te recomiendo hablar con alguien de confianza y considerar consultar a un psicólogo para explorar lo que te sucede."
+  },
+  {
+    "input": "Siento mucha ansiedad antes de salir de casa.",
+    "output": "¿La ansiedad es tan intensa que llegas a evitar salir o hacer tus actividades habituales?"
+  },
+  {
+    "input": "A veces evito salir porque me da miedo enfrentarme a la gente.",
+    "output": "Evitar situaciones sociales puede aumentar la ansiedad a largo plazo. ¿Has probado técnicas de relajación o ejercicios de respiración?"
+  },
+  {
+    "input": "No, no sé cómo hacer esos ejercicios.",
+    "output": "Puedo enseñarte una técnica sencilla de respiración: inhala lento por la nariz contando hasta cuatro, mantén el aire, y exhala por la boca contando hasta seis. Repítelo varias veces."
+  },
+  {
+    "input": "Me siento solo aunque estoy rodeado de gente.",
+    "output": "La soledad puede sentirse incluso acompañado. ¿Tienes alguien cercano con quien compartir tus emociones?"
+  },
+  {
+    "input": "No, no quiero preocupar a nadie con mis problemas.",
+    "output": "Hablar sobre lo que sientes puede ayudarte a aliviar la carga emocional. Considera buscar apoyo profesional si lo necesitas."
+  },
+  {
+    "input": "Tengo pensamientos negativos sobre mí todo el tiempo.",
+    "output": "Los pensamientos negativos recurrentes pueden afectar tu autoestima. ¿Has intentado identificar o escribir estos pensamientos para analizarlos?"
+  },
+  {
+    "input": "No, nunca he intentado escribir lo que pienso.",
+    "output": "Te sugiero llevar un diario emocional donde anotes tus pensamientos y emociones. Esto puede ayudarte a entender mejor lo que te pasa."
+  },
+  {
+    "input": "A veces me siento muy nervioso sin motivo aparente.",
+    "output": "La ansiedad puede aparecer sin razón clara. ¿Hay situaciones específicas que suelan disparar ese nerviosismo?"
+  },
+  {
+    "input": "No puedo dejar de preocuparme por el futuro.",
+    "output": "La preocupación excesiva puede generar mucha ansiedad. Practicar mindfulness o atención plena puede ayudarte a centrarte en el presente."
+  },
+  {
+    "input": "Me cuesta confiar en las personas.",
+    "output": "La confianza puede verse afectada por experiencias pasadas. ¿Has tenido alguna situación reciente que haya afectado tu confianza?"
+  },
+  {
+    "input": "Sí, una persona cercana me decepcionó.",
+    "output": "Es normal sentirse herido tras una decepción. Date tiempo para procesar y, si lo consideras necesario, busca apoyo emocional."
+  },
+  {
+    "input": "Tengo miedo de expresar mis emociones.",
+    "output": "Expresar emociones es parte importante del bienestar. ¿Te gustaría aprender estrategias para comunicar lo que sientes?"
+  },
+  {
+    "input": "Me irrito fácilmente y discuto con mi familia.",
+    "output": "La irritabilidad puede ser una señal de estrés acumulado. ¿Has identificado qué situaciones suelen desencadenar esas discusiones?"
+  },
+  {
+    "input": "No sé cómo controlar mi enojo.",
+    "output": "Practicar técnicas de respiración y hacer pausas antes de responder puede ayudarte a manejar el enojo. Si es muy frecuente, considera buscar ayuda profesional."
   }
 ]

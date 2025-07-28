@@ -1,8 +1,16 @@
 import speech_recognition as sr
 import pyttsx3
-from chatbot_core import predict_class, get_response, zung_questions, respuesta_a_valor, interpretar_zung
+from chatbot_core import (
+    predict_class,
+    get_response,
+    retrieval_response,
+    zung_questions,
+    respuesta_a_valor,
+    interpretar_zung,
+)
 
 r = sr.Recognizer()
+
 def speak(text):
     print("Dimsor:", text)
     engine = pyttsx3.init()
@@ -32,8 +40,9 @@ def listen():
 doing_zung = False
 zung_index = 0
 zung_answers = []
+first_turn = True
 
-speak("Dimsor por voz iniciado. Di 'salir' para terminar.")
+speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar.")
 while True:
     if doing_zung:
         if zung_index == 0:
@@ -62,7 +71,9 @@ while True:
             zung_index = 0
             zung_answers = []
     else:
-        speak("¿En qué puedo ayudarte?")
+        if first_turn:
+            speak("¿En qué puedo ayudarte?")
+            first_turn = False
         message = listen()
         if not message:
             continue
@@ -70,9 +81,19 @@ while True:
             speak("Hasta luego.")
             break
         ints = predict_class(message)
-        res, tag = get_response(ints)
-        speak(res)
-        if tag == "realizar prueba":
-            doing_zung = True
-            zung_index = 0
-            zung_answers = []
+        # Lógica híbrida: retrieval si intent es poco claro o baja probabilidad
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            speak(res)
+        else:
+            res, tag = get_response(ints)
+            # Si el intent es saludo, solo responde el saludo una vez, luego responde otra cosa
+            if tag == "saludo" and not first_turn:
+                # No repetir saludo, buscar otra respuesta neutra
+                speak("¿Quieres hablar de algún tema en especial o necesitas ayuda con algo más?")
+            else:
+                speak(res)
+            if tag == "realizar prueba":
+                doing_zung = True
+                zung_index = 0
+                zung_answers = []

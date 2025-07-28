@@ -1,4 +1,11 @@
-from chatbot_core import predict_class, get_response, zung_questions, respuesta_a_valor, interpretar_zung
+from chatbot_core import (
+    predict_class,
+    get_response,
+    retrieval_response,
+    zung_questions,
+    respuesta_a_valor,
+    interpretar_zung,
+)
 
 print("Dimsor Chatbot iniciado! (escribe 'salir' para terminar)")
 doing_zung = False
@@ -37,9 +44,14 @@ while True:
             print("Hasta luego.")
             break
         ints = predict_class(message)
-        res, tag = get_response(ints)
-        print("Dimsor:", res)
-        if tag == "realizar prueba":  # Usa el intent que activa el modo clínico
-            doing_zung = True
-            zung_index = 0
-            zung_answers = []
+        # Lógica híbrida: usa retrieval si la predicción de intent es baja o no hay intent claro
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            print("Dimsor (retrieval):", res)
+        else:
+            res, tag = get_response(ints)
+            print("Dimsor:", res)
+            if tag == "realizar prueba":
+                doing_zung = True
+                zung_index = 0
+                zung_answers = []
