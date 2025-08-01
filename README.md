@@ -4,6 +4,12 @@ Bienvenido/a al repositorio de **Dimsor**, un chatbot de apoyo emocional, conver
 
 ---
 
+## Repositorios relacionados
+
+- [Robotica-Web](https://github.com/DominidM/Robotica-Web)
+- [Robotica-Mobile](https://github.com/DominidM/Robotica-Mobile)
+  
+
 ## Características
 
 - Reconocimiento de intenciones (`intents.json`) enriquecido, con cientos de frases y respuestas para conversación natural.
