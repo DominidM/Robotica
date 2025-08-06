@@ -18,7 +18,6 @@ def reproducir_audio():
         pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
         
-        # Esperar a que termine
         while pygame.mixer.music.get_busy():
             pygame.time.wait(100)
         
@@ -27,6 +26,21 @@ def reproducir_audio():
         time.sleep(1)
     except Exception as e:
         print(f"Error reproduciendo audio: {e}")
+
+def reproducir_beep():
+    """Reproduce un beep para indicar inicio de escucha de voz"""
+    try:
+        pygame.mixer.init()
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        beep_file = os.path.join(script_dir, 'beep.mp3')  # Usa beep.mp3
+        pygame.mixer.music.load(beep_file)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            pygame.time.wait(100)
+        pygame.mixer.music.stop()
+        pygame.mixer.quit()
+    except Exception as e:
+        print(f"Error reproduciendo beep: {e}")
 
 def hablar(texto):
     """Función para hablar que reinicializa el motor cada vez"""
@@ -78,6 +92,9 @@ def escuchar_nombre():
         with microphone as source:
             print("🎤 Calibrando micrófono para ruido ambiente...")
             recognizer.adjust_for_ambient_noise(source, duration=2)
+        hablar("Cuando escuches el beep, di tu nombre.")
+        print("🎤 Cuando escuches el beep, di tu nombre.")
+        reproducir_beep()
         print("🎤 Escuchando nombre... (20 segundos)")
         with microphone as source:
             audio = recognizer.listen(source, timeout=20, phrase_time_limit=10)
@@ -103,6 +120,9 @@ def confirmar_nombre(nombre):
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
     try:
+        hablar("Cuando escuches el beep, confirma si tu nombre es correcto (di sí o no).")
+        print("🎤 Cuando escuches el beep, confirma si tu nombre es correcto (di sí o no).")
+        reproducir_beep()
         print("🎤 Escuchando confirmación... (10 segundos)")
         with microphone as source:
             audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
@@ -188,7 +208,6 @@ url_api = "http://localhost:8001/api/usuarios/ingresar"
 try:
     response = requests.post(url_api, json=payload)
     if response.status_code in (200, 201):
-        # Muestra la clave real devuelta por el backend si existe
         data = response.json()
         registro_key_mostrada = data.get("registro_key", registro_key)
         print(f"Usuario {nombre} registrado correctamente. Tu código de registro es: {registro_key_mostrada}")
