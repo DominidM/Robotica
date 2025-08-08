@@ -1,0 +1,1 @@
+# Código para detectar manos y clasificar gestos de señas

@@ -17,7 +17,7 @@ from modules.test_psico.test_zung import (
 )
 from modules.chatbot.inferencia import iniciar_chatbot_texto
 from modules.chatbot.voz import iniciar_chatbot_voz, listen, speak
-from modules.robotica import motores
+from modules.vision.seguimiento_persona import seguimiento_por_camara
 
 ROBOT_INFO_FILE = "config/robot_info.json"
 USER_SESSION_FILE = "config/usuario_sesion.json"
@@ -216,19 +216,14 @@ def comando_seguimiento(msg):
     return any(palabra in msg.lower() for palabra in ["sígueme", "seguime", "sígame", "seguir", "sigueme"])
 
 def seguir_persona():
-    motores.setup()
-    hablar("Iniciando modo seguimiento. Di 'detente' para parar.")
+    hablar("Iniciando modo seguimiento por cámara. Di 'detente' o presiona Q para parar.")
     try:
-        while True:
-            motores.avanzar(1)
-            print("Avanzando en modo seguimiento...")
-            comando = input("Escribe 'detente' para parar el seguimiento (simulación): ").strip().lower()
-            if comando == "detente" or comando == "parar":
-                motores.detener()
-                hablar("Modo seguimiento detenido.")
-                break
-    finally:
-        motores.limpiar()
+        seguimiento_por_camara(mostrar=True)
+        hablar("Modo seguimiento detenido.")
+    except Exception as e:
+        print(f"Error en el modo seguimiento: {e}")
+        hablar("Ocurrió un error en el modo seguimiento.")
+    # No necesitas limpiar motores aquí porque el módulo lo hace
 
 def modo_chatbot_voz():
     intentos_micro = 0

@@ -1,0 +1,1 @@
+# Código para cargar modelos y reconocer emociones en imágenes/cámara
