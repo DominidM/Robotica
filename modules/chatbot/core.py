@@ -7,18 +7,18 @@ from keras.models import load_model
 import os
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- Paths y Carga de recursos ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = os.path.join(BASE_DIR, "chatbot/data")
+
 lemmatizer = WordNetLemmatizer()
 
-# Intents
+# Carga intents y datos del chatbot
 intents = json.load(open(os.path.join(DATA_DIR, 'intents.json'), encoding="utf-8"))
 words = pickle.load(open(os.path.join(DATA_DIR, 'words.pkl'), 'rb'))
 classes = pickle.load(open(os.path.join(DATA_DIR, 'classes.pkl'), 'rb'))
 model = load_model(os.path.join(DATA_DIR, 'chatbot_model.h5'))
 
-# Retrieval
+# Retrieval QA
 try:
     with open(os.path.join(DATA_DIR, "retrieval_vectorizer.pkl"), "rb") as f:
         retrieval_vectorizer = pickle.load(f)
@@ -41,7 +41,7 @@ except Exception as e:
     def retrieval_response(user_input, threshold=0.3):
         return "Funcionalidad de retrieval no disponible."
 
-# --- Funciones de INTENTS ---
+# Funciones de procesamiento de intents
 def clean_up_sentence(sentence):
     sentence_words = nltk.word_tokenize(sentence)
     sentence_words = [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
@@ -75,53 +75,3 @@ def get_response(ints):
         if i['tag'] == tag:
             return np.random.choice(i['responses']), tag
     return "No entiendo, ¿puedes reformular?", tag
-
-# --- Test clínico (Zung) ---
-def cargar_preguntas_zung():
-    # Puedes cargar de JSON externo, o definir aquí
-    try:
-        with open(os.path.join(DATA_DIR, 'zung_questions.json'), encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return [
-            "Me siento triste y deprimido.",
-            "Por las mañanas me siento mejor que por las tardes.",
-            # ... agrega el resto de tus preguntas ...
-        ]
-
-zung_questions = cargar_preguntas_zung()
-text_to_score = {
-    1: ["muy pocas veces", "nunca", "casi nunca", "nada", "jamás", "ninguna vez", "para nada", "raramente", "pocas veces"],
-    2: ["algunas veces", "a veces", "ocasionalmente", "poco", "de vez en cuando"],
-    3: ["muchas veces", "frecuentemente", "a menudo", "bastante", "seguido", "considerablemente"],
-    4: ["casi siempre", "siempre", "todo el tiempo", "la mayoría de las veces", "muy frecuente"]
-}
-zung_reverse = {4:1, 3:2, 2:3, 1:4}
-zung_reverse_questions = [2, 5, 6, 11, 12, 14, 16, 17, 18, 20]
-
-def respuesta_a_valor(texto):
-    texto = texto.strip().lower()
-    for val, palabras in text_to_score.items():
-        for palabra in palabras:
-            if palabra in texto:
-                return val
-    if texto in ["1", "2", "3", "4"]:
-        return int(texto)
-    return None
-
-def interpretar_zung(respuestas):
-    puntaje = 0
-    for idx, r in enumerate(respuestas):
-        valor = r
-        if (idx+1) in zung_reverse_questions:
-            valor = zung_reverse.get(valor, valor)
-        puntaje += valor
-    if puntaje <= 28:
-        nivel = "Ausencia de depresión"
-    elif 29 <= puntaje <= 41:
-        nivel = "Depresión leve"
-    elif 42 <= puntaje <= 53:
-        nivel = "Depresión moderada"
-    else:
-        nivel = "Depresión grave"
-    return nivel

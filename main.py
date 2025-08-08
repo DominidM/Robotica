@@ -9,15 +9,25 @@ import speech_recognition as sr
 import random
 import string
 
-ROBOT_INFO_FILE = "robot_info.json"
-USER_SESSION_FILE = "usuario_sesion.json"
+# --- Importa los chatbots y motores ---
+from modules.chatbot.core import predict_class, get_response, retrieval_response
+from modules.test_psico.test_zung import (
+    cargar_preguntas, respuesta_a_valor, interpretar_zung,
+    guardar_resultado, cargar_usuario, ultimo_resultado_usuario,
+)
+from modules.chatbot.inferencia import iniciar_chatbot_texto
+from modules.chatbot.voz import iniciar_chatbot_voz, listen, speak
+from modules.robotica import motores
+
+ROBOT_INFO_FILE = "config/robot_info.json"
+USER_SESSION_FILE = "config/usuario_sesion.json"
 
 def reproducir_audio():
     try:
         pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=512)
         pygame.mixer.init()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        audio_file = os.path.join(script_dir, 'sonido_inicio.mp3')
+        audio_file = os.path.join(script_dir, 'sound/sonido_inicio.mp3')
         pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
         while pygame.mixer.music.get_busy():
@@ -32,7 +42,7 @@ def reproducir_beep():
     try:
         pygame.mixer.init()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        beep_file = os.path.join(script_dir, 'beep.mp3')
+        beep_file = os.path.join(script_dir, 'sound/beep.mp3')
         pygame.mixer.music.load(beep_file)
         pygame.mixer.music.play()
         while pygame.mixer.music.get_busy():
@@ -84,6 +94,13 @@ def verificar_microfono():
         return bool(input_devices)
     except Exception as e:
         print(f"❌ Error verificando micrófono: {e}")
+        return False
+
+def verificar_microfono_voz():
+    try:
+        mic_list = sr.Microphone.list_microphone_names()
+        return bool(mic_list)
+    except Exception:
         return False
 
 def escuchar_nombre():
@@ -195,13 +212,135 @@ def registrar_o_verificar_robot():
         hablar("Ocurrió un error inesperado registrando el robot.")
         return None
 
+def comando_seguimiento(msg):
+    return any(palabra in msg.lower() for palabra in ["sígueme", "seguime", "sígame", "seguir", "sigueme"])
+
+def seguir_persona():
+    motores.setup()
+    hablar("Iniciando modo seguimiento. Di 'detente' para parar.")
+    try:
+        while True:
+            motores.avanzar(1)
+            print("Avanzando en modo seguimiento...")
+            comando = input("Escribe 'detente' para parar el seguimiento (simulación): ").strip().lower()
+            if comando == "detente" or comando == "parar":
+                motores.detener()
+                hablar("Modo seguimiento detenido.")
+                break
+    finally:
+        motores.limpiar()
+
+def modo_chatbot_voz():
+    intentos_micro = 0
+    speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
+    while True:
+        try:
+            message = listen()
+        except Exception as e:
+            intentos_micro += 1
+            speak("No se pudo acceder al micrófono. Prueba nuevamente o revisa la conexión del micro.")
+            print(f"Error en listen(): {e}")
+            if intentos_micro >= 2:
+                speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
+                print("Cambiando a modo texto automáticamente.")
+                modo_chatbot_texto()
+                return
+            continue
+        if not message:
+            continue
+        if message.lower() in ["salir", "terminar"]:
+            speak("Hasta luego.")
+            break
+        if comando_seguimiento(message):
+            speak("¡Modo seguimiento activado!")
+            seguir_persona()
+            continue
+        # --- RESPUESTA CHATBOT ---
+        ints = predict_class(message)
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            speak(res)
+        else:
+            res, tag = get_response(ints)
+            speak(res)
+            if tag == "realizar prueba":
+                # Puedes lanzar aquí el flujo de test Zung por voz si lo integras
+                pass
+
+def modo_chatbot_texto():
+    print("Dimsor por texto iniciado. Escribe 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
+    doing_zung = False
+    zung_index = 0
+    zung_answers = []
+    usuario = None
+    while True:
+        message = input("Tú: ").strip()
+        if not message:
+            continue
+        if message.lower() in ["salir", "terminar"]:
+            print("Hasta luego.")
+            break
+        if comando_seguimiento(message):
+            print("¡Modo seguimiento activado!")
+            seguir_persona()
+            continue
+        if doing_zung:
+            preguntas = cargar_preguntas()
+            if zung_index == 0:
+                usuario = cargar_usuario()
+                print(f"Usuario detectado: {usuario}. Responde cada pregunta con: muy pocas veces, algunas veces, muchas veces o casi siempre.")
+            if zung_index < len(preguntas):
+                pregunta = f"Pregunta {zung_index+1}: {preguntas[zung_index]}"
+                print(pregunta)
+                answer = message
+                if answer.lower() in ["salir", "terminar"]:
+                    print("Saliendo de la prueba.")
+                    doing_zung = False
+                    zung_index = 0
+                    zung_answers = []
+                    continue
+                valor = respuesta_a_valor(answer)
+                if valor is not None:
+                    zung_answers.append(valor)
+                    zung_index += 1
+                else:
+                    print("Por favor responde con: muy pocas veces, algunas veces, muchas veces o casi siempre.")
+                    continue
+            else:
+                nivel = interpretar_zung(zung_answers)
+                print(f"Resultado de la prueba: {nivel}.")
+                guardar_resultado(usuario if usuario else "texto", zung_answers, nivel)
+                doing_zung = False
+                zung_index = 0
+                zung_answers = []
+                usuario = None
+            continue
+        # Comando para historial
+        if message.lower() in ["mi resultado anterior", "último resultado", "historial"]:
+            res, fecha = ultimo_resultado_usuario()
+            if res:
+                print(f"Tu último resultado fue '{res}' el {fecha}.")
+            else:
+                print("No tienes resultados guardados todavía.")
+            continue
+        ints = predict_class(message)
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            print(res)
+        else:
+            res, tag = get_response(ints)
+            print(res)
+            if tag == "realizar prueba":
+                doing_zung = True
+                zung_index = 0
+                zung_answers = []
+
 # ----- INICIO DEL SCRIPT -----
 print("Iniciando DIMSOR...")
 reproducir_audio()
 hablar("Iniciando DIMSOR")
 time.sleep(1)
 
-# ----- Registro/identificación del robot -----
 robot_info = leer_info_local(ROBOT_INFO_FILE)
 if robot_info:
     robot_id = robot_info["id"]
@@ -210,7 +349,6 @@ else:
     robot_id = registrar_o_verificar_robot()
     print(f"Robot registrado. ID: {robot_id}")
 
-# ----- Registro/identificación del usuario -----
 usuario_data = leer_info_local(USER_SESSION_FILE)
 if usuario_data:
     nombre = usuario_data["nombre"]
@@ -218,7 +356,6 @@ if usuario_data:
     rol_id = usuario_data["rol_id"]
     print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
     hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
-    # Aquí continúa el flujo de diálogo
 else:
     print("Hola, soy Dimsor")
     hablar("Hola, soy Dimsor")
@@ -283,7 +420,6 @@ else:
                 error_data = response.json()
                 print("Usuario ya registrado:", error_data)
                 hablar("Este usuario ya está registrado. Recuperando información...")
-                # Puedes hacer una consulta GET al usuario si tienes endpoint
             except Exception:
                 print("Usuario ya registrado pero no se pudo recuperar la información.")
                 hablar("Este usuario ya está registrado. Pero no se pudo recuperar la información.")
@@ -302,5 +438,10 @@ else:
         print(f"Error inesperado: {e}")
         hablar("Ocurrió un error inesperado.")
 
-print("Programa finalizado.")
-hablar("Hasta luego. Que tengas un buen día.")
+# --------- FLUJO AUTOMÁTICO SEGÚN MICROFONO ---------
+if verificar_microfono_voz():
+    print("🎤 Micrófono detectado. Usando chatbot por voz.")
+    modo_chatbot_voz()
+else:
+    print("❌ No se detectó micrófono. Usando chatbot por texto.")
+    modo_chatbot_texto()
