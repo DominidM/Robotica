@@ -8,6 +8,7 @@ import pygame
 import speech_recognition as sr
 import random
 import string
+from datetime import datetime
 
 # --- Importa los chatbots y motores ---
 from modules.chatbot.core import predict_class, get_response, retrieval_response
@@ -21,6 +22,7 @@ from modules.vision.seguimiento_persona import seguimiento_por_camara
 
 ROBOT_INFO_FILE = "config/robot_info.json"
 USER_SESSION_FILE = "config/usuario_sesion.json"
+SESION_ACTUAL_FILE = "config/sesion_actual.json"
 
 def reproducir_audio():
     try:
@@ -223,9 +225,43 @@ def seguir_persona():
     except Exception as e:
         print(f"Error en el modo seguimiento: {e}")
         hablar("Ocurrió un error en el modo seguimiento.")
-    # No necesitas limpiar motores aquí porque el módulo lo hace
 
-def modo_chatbot_voz():
+def crear_sesion_api(usuario_id, robot_id):
+    url = "http://localhost:8001/api/sesiones/"
+    payload = {
+        "usuario_id": usuario_id,
+        "robot_id": robot_id,
+        "fecha_inicio": datetime.now().isoformat()
+    }
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            sesion = response.json()
+            print(f"Sesión creada: {sesion}")
+            return sesion["id"]
+        else:
+            print("Error al crear sesión:", response.text)
+            return None
+    except Exception as e:
+        print("Error al conectar a la API de sesión:", e)
+        return None
+
+def cerrar_sesion_api(sesion_id):
+    url = "http://localhost:8001/api/sesiones/cerrar/"
+    payload = {
+        "sesion_id": sesion_id,
+        "fecha_fin": datetime.now().isoformat()
+    }
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("Sesión cerrada correctamente.")
+        else:
+            print("Error cerrando sesión:", response.text)
+    except Exception as e:
+        print("Error al conectar a la API de cerrar sesión:", e)
+
+def modo_chatbot_voz(sesion_id=None):
     intentos_micro = 0
     speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
     while True:
@@ -238,19 +274,20 @@ def modo_chatbot_voz():
             if intentos_micro >= 2:
                 speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
                 print("Cambiando a modo texto automáticamente.")
-                modo_chatbot_texto()
+                modo_chatbot_texto(sesion_id=sesion_id)
                 return
             continue
         if not message:
             continue
         if message.lower() in ["salir", "terminar"]:
             speak("Hasta luego.")
+            if sesion_id:
+                cerrar_sesion_api(sesion_id)
             break
         if comando_seguimiento(message):
             speak("¡Modo seguimiento activado!")
             seguir_persona()
             continue
-        # --- RESPUESTA CHATBOT ---
         ints = predict_class(message)
         if not ints or float(ints[0]['probability']) < 0.4:
             res = retrieval_response(message)
@@ -262,7 +299,7 @@ def modo_chatbot_voz():
                 # Puedes lanzar aquí el flujo de test Zung por voz si lo integras
                 pass
 
-def modo_chatbot_texto():
+def modo_chatbot_texto(sesion_id=None):
     print("Dimsor por texto iniciado. Escribe 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
     doing_zung = False
     zung_index = 0
@@ -274,6 +311,8 @@ def modo_chatbot_texto():
             continue
         if message.lower() in ["salir", "terminar"]:
             print("Hasta luego.")
+            if sesion_id:
+                cerrar_sesion_api(sesion_id)
             break
         if comando_seguimiento(message):
             print("¡Modo seguimiento activado!")
@@ -310,7 +349,6 @@ def modo_chatbot_texto():
                 zung_answers = []
                 usuario = None
             continue
-        # Comando para historial
         if message.lower() in ["mi resultado anterior", "último resultado", "historial"]:
             res, fecha = ultimo_resultado_usuario()
             if res:
@@ -330,6 +368,17 @@ def modo_chatbot_texto():
                 zung_index = 0
                 zung_answers = []
 
+def obtener_info_usuario(registro_key):
+    url = f"http://localhost:8001/api/usuarios/?registro_key={registro_key}"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200 and response.json():
+            usuario = response.json()[0]  # La API retorna una lista
+            return usuario
+    except Exception as e:
+        print(f"Error obteniendo usuario: {e}")
+    return None
+
 # ----- INICIO DEL SCRIPT -----
 print("Iniciando DIMSOR...")
 reproducir_audio()
@@ -345,10 +394,11 @@ else:
     print(f"Robot registrado. ID: {robot_id}")
 
 usuario_data = leer_info_local(USER_SESSION_FILE)
+registro_key = None
 if usuario_data:
-    nombre = usuario_data["nombre"]
-    registro_key = usuario_data["registro_key"]
-    rol_id = usuario_data["rol_id"]
+    nombre = usuario_data.get("nombre")
+    registro_key = usuario_data.get("registro_key")
+    rol_id = usuario_data.get("rol_id")
     print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
     hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
 else:
@@ -410,6 +460,7 @@ else:
                 "robot_id": robot_id
             }
             guardar_info_local(usuario_data, USER_SESSION_FILE)
+            registro_key = registro_key_mostrada
         elif response.status_code == 409:
             try:
                 error_data = response.json()
@@ -433,10 +484,30 @@ else:
         print(f"Error inesperado: {e}")
         hablar("Ocurrió un error inesperado.")
 
-# --------- FLUJO AUTOMÁTICO SEGÚN MICROFONO ---------
-if verificar_microfono_voz():
-    print("🎤 Micrófono detectado. Usando chatbot por voz.")
-    modo_chatbot_voz()
+# --------- FILTRO DE ACCESO POR ROL Y CREACIÓN DE SESIÓN ---------
+rol_valido = False
+usuario_info = None
+sesion_id = None
+if registro_key:
+    usuario_info = obtener_info_usuario(registro_key)
+    if usuario_info and usuario_info.get("rol_id") == 3:
+        rol_valido = True
+    else:
+        print("❌ Debes completar tu registro en la página web o en el aplicativo móvil.")
+        hablar("Debes completar tu registro en la página web o en el aplicativo móvil antes de continuar.")
+
+if rol_valido:
+    sesion_id = crear_sesion_api(usuario_info["id"], robot_id)
+    if sesion_id:
+        guardar_info_local({"sesion_id": sesion_id}, SESION_ACTUAL_FILE)
+        if verificar_microfono_voz():
+            print("🎤 Micrófono detectado. Usando chatbot por voz.")
+            modo_chatbot_voz(sesion_id=sesion_id)
+        else:
+            print("❌ No se detectó micrófono. Usando chatbot por texto.")
+            modo_chatbot_texto(sesion_id=sesion_id)
+    else:
+        print("No se pudo crear la sesión. Contacta soporte.")
+        hablar("No se pudo crear la sesión. Por favor intenta más tarde.")
 else:
-    print("❌ No se detectó micrófono. Usando chatbot por texto.")
-    modo_chatbot_texto()
+    print("⛔️ Acceso restringido por rol.")
