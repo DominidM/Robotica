@@ -20,9 +20,62 @@ from modules.chatbot.inferencia import iniciar_chatbot_texto
 from modules.chatbot.voz import iniciar_chatbot_voz, listen, speak
 from modules.vision.seguimiento_persona import seguimiento_por_camara
 
+# --- Importa PIL y tkinter para los ojos animados ---
+from PIL import Image, ImageDraw, ImageFont, ImageTk
+import tkinter as tk
+import threading
+
+# --- Configuración de archivo ---
 ROBOT_INFO_FILE = "config/robot_info.json"
 USER_SESSION_FILE = "config/usuario_sesion.json"
 SESION_ACTUAL_FILE = "config/sesion_actual.json"
+
+# --- Parámetros para animación de ojos ---
+WIDTH, HEIGHT = 479, 202
+BG_COLOR = (20, 30, 35)
+EYE_COLOR = (150, 255, 255)
+TEXT_COLOR = (106, 191, 210)
+
+def draw_robot_face(left_eye_x, right_eye_x, eye_y, eye_radius):
+    img = Image.new("RGB", (WIDTH, HEIGHT), BG_COLOR)
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([0, 0, WIDTH, HEIGHT*2], fill=BG_COLOR)
+    draw.pieslice([left_eye_x-eye_radius, eye_y-eye_radius, left_eye_x+eye_radius, eye_y+eye_radius+45], 180, 360, fill=EYE_COLOR)
+    draw.pieslice([right_eye_x-eye_radius, eye_y-eye_radius, right_eye_x+eye_radius, eye_y+eye_radius+45], 180, 360, fill=EYE_COLOR)
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 23)
+    except:
+        font = ImageFont.load_default()
+    draw.text((40, HEIGHT-35), "SG DIMSOR", font=font, fill=TEXT_COLOR)
+    return img
+
+class RobotEyesApp:
+    def __init__(self, master):
+        self.master = master
+        master.title("Simulación Ojos Robot - SG DIMSOR")
+        self.label = tk.Label(master)
+        self.label.pack()
+        self.frame = 0
+        self.animate()
+
+    def animate(self):
+        if self.frame < 20:
+            left_eye_x = 145 + self.frame*2
+            right_eye_x = 285 + self.frame*2
+        else:
+            left_eye_x = 145 + (39-self.frame)*2
+            right_eye_x = 285 + (39-self.frame)*2
+        img = draw_robot_face(left_eye_x, right_eye_x, 110, 45)
+        tk_img = ImageTk.PhotoImage(img)
+        self.label.imgtk = tk_img
+        self.label.configure(image=tk_img)
+        self.frame = (self.frame + 1) % 40
+        self.master.after(80, self.animate)
+
+def mostrar_ojos_robot():
+    root = tk.Tk()
+    app = RobotEyesApp(root)
+    root.mainloop()
 
 def reproducir_audio():
     try:
@@ -192,7 +245,6 @@ def registrar_o_verificar_robot():
                 return robot["id"]
             elif response.status_code == 409:
                 print("Robot ya registrado según la API (409 Conflict)")
-                # Obtén el robot existente
                 response_get = requests.get(url_get)
                 if response_get.status_code == 200 and response_get.json():
                     robot = response_get.json()[0]
@@ -296,7 +348,6 @@ def modo_chatbot_voz(sesion_id=None):
             res, tag = get_response(ints)
             speak(res)
             if tag == "realizar prueba":
-                # Puedes lanzar aquí el flujo de test Zung por voz si lo integras
                 pass
 
 def modo_chatbot_texto(sesion_id=None):
@@ -373,141 +424,145 @@ def obtener_info_usuario(registro_key):
     try:
         response = requests.get(url)
         if response.status_code == 200 and response.json():
-            usuario = response.json()[0]  # La API retorna una lista
+            usuario = response.json()[0]
             return usuario
     except Exception as e:
         print(f"Error obteniendo usuario: {e}")
     return None
 
-# ----- INICIO DEL SCRIPT -----
-print("Iniciando DIMSOR...")
-reproducir_audio()
-hablar("Iniciando DIMSOR")
-time.sleep(1)
+def main():
+    eyes_thread = threading.Thread(target=mostrar_ojos_robot, daemon=True)
+    eyes_thread.start()
+    print("Iniciando DIMSOR...")
+    reproducir_audio()
+    hablar("Iniciando DIMSOR")
+    time.sleep(1)
 
-robot_info = leer_info_local(ROBOT_INFO_FILE)
-if robot_info:
-    robot_id = robot_info["id"]
-    print(f"Robot ya identificado. ID: {robot_id}")
-else:
-    robot_id = registrar_o_verificar_robot()
-    print(f"Robot registrado. ID: {robot_id}")
+    robot_info = leer_info_local(ROBOT_INFO_FILE)
+    if robot_info:
+        robot_id = robot_info["id"]
+        print(f"Robot ya identificado. ID: {robot_id}")
+    else:
+        robot_id = registrar_o_verificar_robot()
+        print(f"Robot registrado. ID: {robot_id}")
 
-usuario_data = leer_info_local(USER_SESSION_FILE)
-registro_key = None
-if usuario_data:
-    nombre = usuario_data.get("nombre")
-    registro_key = usuario_data.get("registro_key")
-    rol_id = usuario_data.get("rol_id")
-    print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
-    hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
-else:
-    print("Hola, soy Dimsor")
-    hablar("Hola, soy Dimsor")
-    nombre_confirmado = False
-    nombre = None
-    usa_microfono = verificar_microfono()
-    while not nombre_confirmado:
-        hablar("¿Cómo te llamas?")
-        if usa_microfono:
-            nombre = escuchar_nombre()
-            if nombre is None or not nombre.strip():
-                hablar("No escuché nada, disculpame. Puedes escribir tu nombre:")
+    usuario_data = leer_info_local(USER_SESSION_FILE)
+    registro_key = None
+    if usuario_data:
+        nombre = usuario_data.get("nombre")
+        registro_key = usuario_data.get("registro_key")
+        rol_id = usuario_data.get("rol_id")
+        print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
+        hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
+    else:
+        print("Hola, soy Dimsor")
+        hablar("Hola, soy Dimsor")
+        nombre_confirmado = False
+        nombre = None
+        usa_microfono = verificar_microfono()
+        while not nombre_confirmado:
+            hablar("¿Cómo te llamas?")
+            if usa_microfono:
+                nombre = escuchar_nombre()
+                if nombre is None or not nombre.strip():
+                    hablar("No escuché nada, disculpame. Puedes escribir tu nombre:")
+                    nombre = input("Escribe tu nombre: ").strip()
+            else:
+                hablar("Por favor, escribe tu nombre")
                 nombre = input("Escribe tu nombre: ").strip()
-        else:
-            hablar("Por favor, escribe tu nombre")
-            nombre = input("Escribe tu nombre: ").strip()
-        if not nombre:
-            print("No ingresaste ningún nombre. Intentemos de nuevo.")
-            continue
-        hablar(f"Entendí que tu nombre es {nombre}. ¿Es correcto?")
-        confirmado = False
-        if usa_microfono:
-            confirmado = confirmar_nombre(nombre)
-            if not confirmado:
-                hablar("Si quieres confirmar, di SÍ o escribe 's' para sí, cualquier otra cosa para no")
-                respuesta_texto = input("¿Es correcto? (s/n): ").lower().strip()
+            if not nombre:
+                print("No ingresaste ningún nombre. Intentemos de nuevo.")
+                continue
+            hablar(f"Entendí que tu nombre es {nombre}. ¿Es correcto?")
+            confirmado = False
+            if usa_microfono:
+                confirmado = confirmar_nombre(nombre)
+                if not confirmado:
+                    hablar("Si quieres confirmar, di SÍ o escribe 's' para sí, cualquier otra cosa para no")
+                    respuesta_texto = input("¿Es correcto? (s/n): ").lower().strip()
+                    confirmado = respuesta_texto in ['s', 'si', 'sí', 'yes', 'y']
+            else:
+                respuesta_texto = input("¿Es correcto tu nombre? (s/n): ").lower().strip()
                 confirmado = respuesta_texto in ['s', 'si', 'sí', 'yes', 'y']
-        else:
-            respuesta_texto = input("¿Es correcto tu nombre? (s/n): ").lower().strip()
-            confirmado = respuesta_texto in ['s', 'si', 'sí', 'yes', 'y']
-        if confirmado:
-            hablar(f"Perfecto, {nombre}. Procedo a registrarte.")
-            nombre_confirmado = True
-        else:
-            hablar("Entiendo, vamos a intentarlo de nuevo.")
+            if confirmado:
+                hablar(f"Perfecto, {nombre}. Procedo a registrarte.")
+                nombre_confirmado = True
+            else:
+                hablar("Entiendo, vamos a intentarlo de nuevo.")
 
-    registro_key = generar_registro_key()
-    rol_id = 1  # invitado
-    payload = {
-        "nombre": nombre,
-        "registro_key": registro_key,
-        "rol_id": rol_id,
-        "robot_id": robot_id
-    }
-    url_api = "http://localhost:8001/api/usuarios/ingresar"
-    try:
-        response = requests.post(url_api, json=payload)
-        if response.status_code in (200, 201):
-            data = response.json()
-            registro_key_mostrada = data.get("registro_key", registro_key)
-            print(f"Usuario {nombre} registrado correctamente. Tu código de registro es: {registro_key_mostrada}")
-            hablar(f"Usuario {nombre} registrado correctamente. Tu código de registro es {registro_key_mostrada}")
-            usuario_data = {
-                "nombre": nombre,
-                "registro_key": registro_key_mostrada,
-                "rol_id": rol_id,
-                "robot_id": robot_id
-            }
-            guardar_info_local(usuario_data, USER_SESSION_FILE)
-            registro_key = registro_key_mostrada
-        elif response.status_code == 409:
-            try:
-                error_data = response.json()
-                print("Usuario ya registrado:", error_data)
-                hablar("Este usuario ya está registrado. Recuperando información...")
-            except Exception:
-                print("Usuario ya registrado pero no se pudo recuperar la información.")
-                hablar("Este usuario ya está registrado. Pero no se pudo recuperar la información.")
-        else:
-            try:
-                error_data = response.json()
-                print("Error al registrar usuario:", error_data)
-                hablar("Hubo un error al registrar el usuario.")
-            except Exception:
-                print("Error al registrar usuario:", response.text)
-                hablar("Hubo un error al registrar el usuario.")
-    except requests.exceptions.ConnectionError:
-        print("Error: No se pudo conectar con el servidor. ¿Está ejecutándose el backend?")
-        hablar("Error de conexión con el servidor.")
-    except Exception as e:
-        print(f"Error inesperado: {e}")
-        hablar("Ocurrió un error inesperado.")
+        registro_key = generar_registro_key()
+        rol_id = 1
+        payload = {
+            "nombre": nombre,
+            "registro_key": registro_key,
+            "rol_id": rol_id,
+            "robot_id": robot_id
+        }
+        url_api = "http://localhost:8001/api/usuarios/ingresar"
+        try:
+            response = requests.post(url_api, json=payload)
+            if response.status_code in (200, 201):
+                data = response.json()
+                registro_key_mostrada = data.get("registro_key", registro_key)
+                print(f"Usuario {nombre} registrado correctamente. Tu código de registro es: {registro_key_mostrada}")
+                hablar(f"Usuario {nombre} registrado correctamente. Tu código de registro es {registro_key_mostrada}")
+                usuario_data = {
+                    "nombre": nombre,
+                    "registro_key": registro_key_mostrada,
+                    "rol_id": rol_id,
+                    "robot_id": robot_id
+                }
+                guardar_info_local(usuario_data, USER_SESSION_FILE)
+                registro_key = registro_key_mostrada
+            elif response.status_code == 409:
+                try:
+                    error_data = response.json()
+                    print("Usuario ya registrado:", error_data)
+                    hablar("Este usuario ya está registrado. Recuperando información...")
+                except Exception:
+                    print("Usuario ya registrado pero no se pudo recuperar la información.")
+                    hablar("Este usuario ya está registrado. Pero no se pudo recuperar la información.")
+            else:
+                try:
+                    error_data = response.json()
+                    print("Error al registrar usuario:", error_data)
+                    hablar("Hubo un error al registrar el usuario.")
+                except Exception:
+                    print("Error al registrar usuario:", response.text)
+                    hablar("Hubo un error al registrar el usuario.")
+        except requests.exceptions.ConnectionError:
+            print("Error: No se pudo conectar con el servidor. ¿Está ejecutándose el backend?")
+            hablar("Error de conexión con el servidor.")
+        except Exception as e:
+            print(f"Error inesperado: {e}")
+            hablar("Ocurrió un error inesperado.")
 
-# --------- FILTRO DE ACCESO POR ROL Y CREACIÓN DE SESIÓN ---------
-rol_valido = False
-usuario_info = None
-sesion_id = None
-if registro_key:
-    usuario_info = obtener_info_usuario(registro_key)
-    if usuario_info and usuario_info.get("rol_id") == 3:
-        rol_valido = True
+    rol_valido = False
+    usuario_info = None
+    sesion_id = None
+    if registro_key:
+        usuario_info = obtener_info_usuario(registro_key)
+        if usuario_info and usuario_info.get("rol_id") == 3:
+            rol_valido = True
+        else:
+            print("❌ Debes completar tu registro en la página web o en el aplicativo móvil.")
+            hablar("Debes completar tu registro en la página web o en el aplicativo móvil antes de continuar.")
+
+    if rol_valido:
+        sesion_id = crear_sesion_api(usuario_info["id"], robot_id)
+        if sesion_id:
+            guardar_info_local({"sesion_id": sesion_id}, SESION_ACTUAL_FILE)
+            if verificar_microfono_voz():
+                print("🎤 Micrófono detectado. Usando chatbot por voz.")
+                modo_chatbot_voz(sesion_id=sesion_id)
+            else:
+                print("❌ No se detectó micrófono. Usando chatbot por texto.")
+                modo_chatbot_texto(sesion_id=sesion_id)
+        else:
+            print("No se pudo crear la sesión. Contacta soporte.")
+            hablar("No se pudo crear la sesión. Por favor intenta más tarde.")
     else:
-        print("❌ Debes completar tu registro en la página web o en el aplicativo móvil.")
-        hablar("Debes completar tu registro en la página web o en el aplicativo móvil antes de continuar.")
+        print("⛔️ Acceso restringido por rol.")
 
-if rol_valido:
-    sesion_id = crear_sesion_api(usuario_info["id"], robot_id)
-    if sesion_id:
-        guardar_info_local({"sesion_id": sesion_id}, SESION_ACTUAL_FILE)
-        if verificar_microfono_voz():
-            print("🎤 Micrófono detectado. Usando chatbot por voz.")
-            modo_chatbot_voz(sesion_id=sesion_id)
-        else:
-            print("❌ No se detectó micrófono. Usando chatbot por texto.")
-            modo_chatbot_texto(sesion_id=sesion_id)
-    else:
-        print("No se pudo crear la sesión. Contacta soporte.")
-        hablar("No se pudo crear la sesión. Por favor intenta más tarde.")
-else:
-    print("⛔️ Acceso restringido por rol.")
+if __name__ == "__main__":
+    main()
