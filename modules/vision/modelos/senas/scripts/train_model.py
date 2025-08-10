@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import joblib
+import os
 
-# Ruta al CSV unificado (usa ruta absoluta)
-csv_path = "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/all_landmarks.csv"
-model_path = "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/models/abecedario_model.pkl"
+# Usar rutas relativas basadas en la ubicación del script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(script_dir, "..", "dataset", "all_landmarks.csv")
+model_path = os.path.join(script_dir, "..", "models", "abecedario_model.pkl")
 
 # Leer el CSV unificado
 df = pd.read_csv(csv_path)

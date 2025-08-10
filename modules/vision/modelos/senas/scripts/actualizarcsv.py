@@ -3,11 +3,15 @@ import csv
 import glob
 import pandas as pd
 
-csv_path = "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/all_landmarks.csv"
+# Ubicación del script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Rutas relativas basadas en la ubicación del script
+csv_path = os.path.join(script_dir, "..", "dataset", "all_landmarks.csv")
 landmark_dirs = [
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/train/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/valid/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/test/",
+    os.path.join(script_dir, "..", "dataset", "landmarks", "train"),
+    os.path.join(script_dir, "..", "dataset", "landmarks", "valid"),
+    os.path.join(script_dir, "..", "dataset", "landmarks", "test"),
 ]
 
 # 1. Cargar nombres de imágenes existentes en el CSV

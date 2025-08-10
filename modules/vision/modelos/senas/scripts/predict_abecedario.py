@@ -1,10 +1,14 @@
-#prediccion 
+import os
 import cv2
 import mediapipe as mp
 import numpy as np
 import joblib
 
-model = joblib.load("../models/abecedario_model.pkl")
+# Obtén la ruta absoluta del modelo usando la ubicación del script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(script_dir, "..", "models", "abecedario_model.pkl")
+model = joblib.load(model_path)
+
 mp_hands = mp.solutions.hands
 
 cap = cv2.VideoCapture(0)

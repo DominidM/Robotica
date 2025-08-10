@@ -6,8 +6,10 @@ import csv
 mp_hands = mp.solutions.hands
 
 splits = ["train", "valid", "test"]
-base_input_dir = "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/roboflow/"
-base_output_dir = "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/"
+# Usa rutas relativas desde la ubicación del script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+base_input_dir = os.path.join(script_dir, "..", "dataset", "roboflow")
+base_output_dir = os.path.join(script_dir, "..", "dataset", "landmarks")
 resize_dim = (320, 320)  # Puedes ajustar el tamaño aquí
 
 def preprocess_image(image):

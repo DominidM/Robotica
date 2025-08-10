@@ -1,18 +1,21 @@
 import os
 import glob
 
-# Carpetas con imágenes originales
+# Carpeta base del script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Carpetas con imágenes originales (rutas relativas)
 image_dirs = [
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/roboflow/train/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/roboflow/valid/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/roboflow/test/",
+    os.path.join(script_dir, "..", "dataset", "roboflow", "train"),
+    os.path.join(script_dir, "..", "dataset", "roboflow", "valid"),
+    os.path.join(script_dir, "..", "dataset", "roboflow", "test"),
 ]
 
-# Carpetas con landmarks CSV individuales
+# Carpetas con landmarks CSV individuales (rutas relativas)
 landmark_dirs = [
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/train/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/valid/",
-    "C:/Users/ASKINET/Desktop/REPOSITORIES/Robotica/modules/vision/modelos/senas/dataset/landmarks/test/",
+    os.path.join(script_dir, "..", "dataset", "landmarks", "train"),
+    os.path.join(script_dir, "..", "dataset", "landmarks", "valid"),
+    os.path.join(script_dir, "..", "dataset", "landmarks", "test"),
 ]
 
 def borrar_archivos(directorio, patrones):
