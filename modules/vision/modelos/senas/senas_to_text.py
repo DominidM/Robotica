@@ -25,6 +25,7 @@ def hablar(texto):
 
 def mostrar_camara():
     cap = cv2.VideoCapture(0)
+    
     if not cap.isOpened():
         print("No se pudo abrir la cámara.")
         return
