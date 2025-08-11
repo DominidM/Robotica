@@ -1,6 +1,7 @@
 import os
 import joblib
 import pandas as pd
+import cv2
 
 # Rutas y carga modelo
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,9 +23,28 @@ def hablar(texto):
     engine.stop()
     del engine
 
+def mostrar_camara():
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("No se pudo abrir la cámara.")
+        return
+    print("Presiona 'q' para salir de la cámara.")
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("No se pudo obtener frame de la cámara.")
+            break
+        cv2.imshow('Vista Cámara Señal', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Cerrando cámara.")
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
 def detectar_letra_por_camara():
-    # Aquí integra tu pipeline real de cámara + landmarks + predicción.
-    # Ejemplo simulado: pedir CSV de landmarks por consola
+    # Muestra la cámara para referencia visual (desarrollo)
+    mostrar_camara()
+    # Simula pipeline: pedir CSV de landmarks por consola
     csv_path = input("Ruta CSV de landmarks de la imagen/seña (o ENTER para terminar): ").strip()
     if not csv_path:
         return None
@@ -37,7 +57,8 @@ def detectar_letra_por_camara():
     return letra
 
 def senas_a_texto():
-    print("Transforma señas a texto. Ingresa CSV de cada seña, ENTER para finalizar.")
+    print("Transforma señas a texto. Se muestra tu cámara para referencia.")
+    print("Ingresa CSV de cada seña, ENTER para finalizar.")
     print("Si tu modelo predice 'ESPACIO', se agrega un espacio. Si predice 'FIN', termina la frase.")
     texto = ""
     while True:
