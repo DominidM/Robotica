@@ -1,5 +1,8 @@
 import speech_recognition as sr
 import pyttsx3
+import time
+import os
+
 
 from modules.chatbot.core import (
     predict_class,
@@ -127,7 +130,14 @@ def iniciar_chatbot_voz():
             if not message:
                 continue
             if message.lower() in ["salir", "terminar"]:
-                speak("Hasta luego.")
+                speak("Hasta luego. Apagando el sistema, por favor espera.")
+                print("Dimsor: Apagando Raspberry Pi...")
+                time.sleep(2)
+
+
+                #os.system("sudo shutdown now")
+
+
                 break
             if message.lower() in ["mi resultado anterior", "último resultado", "historial"]:
                 res, fecha = ultimo_resultado_usuario()

@@ -9,6 +9,11 @@ import speech_recognition as sr
 import random
 import string
 from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont, ImageTk
+import tkinter as tk
+import threading
+import joblib
+import pandas as pd
 
 # --- Importa los chatbots y motores ---
 from modules.chatbot.core import predict_class, get_response, retrieval_response
@@ -20,17 +25,10 @@ from modules.chatbot.inferencia import iniciar_chatbot_texto
 from modules.chatbot.voz import iniciar_chatbot_voz, listen, speak
 from modules.vision.seguimiento_persona import seguimiento_por_camara
 
-# --- Importa PIL y tkinter para los ojos animados ---
-from PIL import Image, ImageDraw, ImageFont, ImageTk
-import tkinter as tk
-import threading
-
-# --- Configuración de archivo ---
 ROBOT_INFO_FILE = "config/robot_info.json"
 USER_SESSION_FILE = "config/usuario_sesion.json"
 SESION_ACTUAL_FILE = "config/sesion_actual.json"
 
-# --- Parámetros para animación de ojos ---
 WIDTH, HEIGHT = 479, 202
 BG_COLOR = (20, 30, 35)
 EYE_COLOR = (150, 255, 255)
@@ -161,7 +159,7 @@ def verificar_microfono_voz():
 def escuchar_nombre():
     try:
         if not verificar_microfono():
-            print("❌ No hay micrófono disponible, usando entrada de texto")
+            print("❌ No hay micrófono disponible, usando lenguaje de señas.")
             return None
         recognizer = sr.Recognizer()
         microphone = sr.Microphone()
@@ -313,42 +311,119 @@ def cerrar_sesion_api(sesion_id):
     except Exception as e:
         print("Error al conectar a la API de cerrar sesión:", e)
 
-def modo_chatbot_voz(sesion_id=None):
-    intentos_micro = 0
-    speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
+def seleccionar_modo_botones(modo_msg):
+    # Botones físicos Raspberry Pi o simulado por teclado
+    try:
+        import RPi.GPIO as GPIO
+        IZQ_PIN = 17  # botón izquierdo
+        DER_PIN = 27  # botón derecho
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(IZQ_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(DER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        hablar(modo_msg)
+        print(modo_msg)
+        print("Presiona botón izquierdo para VOZ, derecho para SEÑAS.")
+        while True:
+            if GPIO.input(IZQ_PIN) == GPIO.LOW:
+                GPIO.cleanup()
+                return "voz"
+            if GPIO.input(DER_PIN) == GPIO.LOW:
+                GPIO.cleanup()
+                return "senas"
+            time.sleep(0.1)
+    except ImportError:
+        # Simulación por teclado para desarrollo
+        print(modo_msg)
+        hablar(modo_msg)
+        print("Selecciona modo: [1] Voz | [2] Lenguaje de señas (simulado)")
+        while True:
+            modo = input("Ingresa 1 para voz, 2 para señas: ").strip()
+            if modo == "1":
+                return "voz"
+            elif modo == "2":
+                return "senas"
+            else:
+                print("Selección inválida.")
+
+def detectar_letra_por_camara_modelo():
+    # RUTA CORRECTA AL MODELO
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    modelo_path = os.path.join(base_dir, "modules", "vision", "modelos", "senas", "models", "abecedario_model.pkl")
+    try:
+        modelo = joblib.load(modelo_path)
+    except Exception as e:
+        print("No se pudo cargar el modelo:", e)
+        return None
+    csv_path = input("Ruta CSV de landmarks de la imagen/seña (ENTER para terminar): ").strip()
+    if not csv_path:
+        return None
+    if not os.path.exists(csv_path):
+        print("Archivo no encontrado.")
+        return None
+    df = pd.read_csv(csv_path, header=None)
+    X = df.values.reshape(1, -1)
+    letra = modelo.predict(X)[0]
+    return letra
+
+def capturar_nombre_por_senas():
+    hablar("Haz las señas de tu nombre, letra por letra. Haz la seña de 'FIN' para terminar.")
+    nombre = ""
     while True:
-        try:
-            message = listen()
-        except Exception as e:
-            intentos_micro += 1
-            speak("No se pudo acceder al micrófono. Prueba nuevamente o revisa la conexión del micro.")
-            print(f"Error en listen(): {e}")
-            if intentos_micro >= 2:
-                speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
-                print("Cambiando a modo texto automáticamente.")
-                modo_chatbot_texto(sesion_id=sesion_id)
-                return
-            continue
-        if not message:
-            continue
-        if message.lower() in ["salir", "terminar"]:
-            speak("Hasta luego.")
-            if sesion_id:
-                cerrar_sesion_api(sesion_id)
+        letra = detectar_letra_por_camara_modelo()
+        if letra is None or str(letra).upper() == "FIN":
             break
-        if comando_seguimiento(message):
-            speak("¡Modo seguimiento activado!")
-            seguir_persona()
-            continue
-        ints = predict_class(message)
-        if not ints or float(ints[0]['probability']) < 0.4:
-            res = retrieval_response(message)
-            speak(res)
+        if letra and str(letra).isalpha():
+            nombre += str(letra)
+            print("Nombre actual:", nombre)
+    hablar(f"Entendí que tu nombre es {nombre}. ¿Es correcto? Haz la seña de 'SI' para confirmar, 'NO' para repetir.")
+    while True:
+        confirm = input("Confirma: Ingresa SI para confirmar, NO para repetir: ").strip().upper()
+        if confirm == "SI":
+            return nombre
+        elif confirm == "NO":
+            hablar("Vamos a intentarlo de nuevo.")
+            return capturar_nombre_por_senas()
         else:
-            res, tag = get_response(ints)
-            speak(res)
-            if tag == "realizar prueba":
-                pass
+            print("Respuesta inválida.")
+
+def modo_chatbot_senas(sesion_id=None):
+    print("Modo lenguaje de señas iniciado.")
+    hablar("Modo lenguaje de señas iniciado. Haz las señas para interactuar.")
+    texto = ""
+    while True:
+        letra = detectar_letra_por_camara_modelo()
+        if letra is None:
+            print("Finalizando modo señas (no se ingresó nada).")
+            break
+        letra_str = str(letra).upper()
+        if letra_str == "FIN":
+            if texto:
+                print("Texto formado:", texto)
+                hablar(f"Palabra/frase finalizada: {texto}")
+                ints = predict_class(texto)
+                if not ints or float(ints[0]['probability']) < 0.4:
+                    res = retrieval_response(texto)
+                else:
+                    res, tag = get_response(ints)
+                print("Dimsor:", res)
+                hablar(res)
+                texto = ""
+            else:
+                print("No se detectó texto, finalizando modo señas.")
+                break
+        elif letra_str == "SALIR":
+            hablar("Saliendo de modo señas.")
+            break
+        elif letra_str == "ESPACIO":
+            texto += " "
+            print("Texto actual:", texto)
+            hablar("espacio")
+        elif letra_str.isalpha() and len(letra_str) == 1:
+            texto += letra_str
+            print("Texto actual:", texto)
+            hablar(letra_str)
+        else:
+            print(f"Seña '{letra_str}' no reconocida como letra o comando.")
 
 def modo_chatbot_texto(sesion_id=None):
     print("Dimsor por texto iniciado. Escribe 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
@@ -419,6 +494,43 @@ def modo_chatbot_texto(sesion_id=None):
                 zung_index = 0
                 zung_answers = []
 
+def modo_chatbot_voz(sesion_id=None):
+    intentos_micro = 0
+    speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
+    while True:
+        try:
+            message = listen()
+        except Exception as e:
+            intentos_micro += 1
+            speak("No se pudo acceder al micrófono. Prueba nuevamente o revisa la conexión del micro.")
+            print(f"Error en listen(): {e}")
+            if intentos_micro >= 2:
+                speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
+                print("Cambiando a modo texto automáticamente.")
+                modo_chatbot_texto(sesion_id=sesion_id)
+                return
+            continue
+        if not message:
+            continue
+        if message.lower() in ["salir", "terminar"]:
+            speak("Hasta luego.")
+            if sesion_id:
+                cerrar_sesion_api(sesion_id)
+            break
+        if comando_seguimiento(message):
+            speak("¡Modo seguimiento activado!")
+            seguir_persona()
+            continue
+        ints = predict_class(message)
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            speak(res)
+        else:
+            res, tag = get_response(ints)
+            speak(res)
+            if tag == "realizar prueba":
+                pass
+
 def obtener_info_usuario(registro_key):
     url = f"http://localhost:8001/api/usuarios/?registro_key={registro_key}"
     try:
@@ -448,42 +560,36 @@ def main():
 
     usuario_data = leer_info_local(USER_SESSION_FILE)
     registro_key = None
-    if usuario_data:
-        nombre = usuario_data.get("nombre")
-        registro_key = usuario_data.get("registro_key")
-        rol_id = usuario_data.get("rol_id")
-        print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
-        hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
-    else:
+
+    # LOGIN
+    if not usuario_data:
         print("Hola, soy Dimsor")
         hablar("Hola, soy Dimsor")
         nombre_confirmado = False
         nombre = None
-        usa_microfono = verificar_microfono()
         while not nombre_confirmado:
-            hablar("¿Cómo te llamas?")
-            if usa_microfono:
+            modo_login = seleccionar_modo_botones("Presiona el botón izquierdo para ingresar tu nombre por voz, derecho para señas.")
+            if modo_login == "voz":
                 nombre = escuchar_nombre()
-                if nombre is None or not nombre.strip():
-                    hablar("No escuché nada, disculpame. Puedes escribir tu nombre:")
-                    nombre = input("Escribe tu nombre: ").strip()
-            else:
-                hablar("Por favor, escribe tu nombre")
-                nombre = input("Escribe tu nombre: ").strip()
+                if not nombre or not nombre.strip():
+                    hablar("No escuché nada, por favor ingresa tu nombre por señas.")
+                    modo_login = "senas"
+                    nombre = capturar_nombre_por_senas()
+            elif modo_login == "senas":
+                nombre = capturar_nombre_por_senas()
             if not nombre:
                 print("No ingresaste ningún nombre. Intentemos de nuevo.")
                 continue
             hablar(f"Entendí que tu nombre es {nombre}. ¿Es correcto?")
             confirmado = False
-            if usa_microfono:
+            if modo_login == "voz":
                 confirmado = confirmar_nombre(nombre)
                 if not confirmado:
-                    hablar("Si quieres confirmar, di SÍ o escribe 's' para sí, cualquier otra cosa para no")
-                    respuesta_texto = input("¿Es correcto? (s/n): ").lower().strip()
-                    confirmado = respuesta_texto in ['s', 'si', 'sí', 'yes', 'y']
-            else:
-                respuesta_texto = input("¿Es correcto tu nombre? (s/n): ").lower().strip()
-                confirmado = respuesta_texto in ['s', 'si', 'sí', 'yes', 'y']
+                    hablar("¿Es correcto tu nombre? Haz la seña de 'SI' para confirmar, 'NO' para repetir.")
+                    respuesta = input("Confirma: Ingresa SI para confirmar, NO para repetir: ").strip().upper()
+                    confirmado = respuesta == "SI"
+            elif modo_login == "senas":
+                confirmado = True  # Ya confirmado en capturar_nombre_por_senas
             if confirmado:
                 hablar(f"Perfecto, {nombre}. Procedo a registrarte.")
                 nombre_confirmado = True
@@ -536,6 +642,12 @@ def main():
         except Exception as e:
             print(f"Error inesperado: {e}")
             hablar("Ocurrió un error inesperado.")
+    else:
+        nombre = usuario_data.get("nombre")
+        registro_key = usuario_data.get("registro_key")
+        rol_id = usuario_data.get("rol_id")
+        print(f"Bienvenido de nuevo, {nombre} (registro: {registro_key})")
+        hablar(f"Bienvenido de nuevo, {nombre}. ¿Listo para comenzar?")
 
     rol_valido = False
     usuario_info = None
@@ -552,12 +664,17 @@ def main():
         sesion_id = crear_sesion_api(usuario_info["id"], robot_id)
         if sesion_id:
             guardar_info_local({"sesion_id": sesion_id}, SESION_ACTUAL_FILE)
-            if verificar_microfono_voz():
-                print("🎤 Micrófono detectado. Usando chatbot por voz.")
-                modo_chatbot_voz(sesion_id=sesion_id)
-            else:
-                print("❌ No se detectó micrófono. Usando chatbot por texto.")
-                modo_chatbot_texto(sesion_id=sesion_id)
+            modo_chat = seleccionar_modo_botones("Presiona el botón izquierdo para comunicarte por voz, derecho para señas.")
+            if modo_chat == "voz":
+                if verificar_microfono_voz():
+                    print("🎤 Usando chatbot por voz.")
+                    modo_chatbot_voz(sesion_id=sesion_id)
+                else:
+                    print("❌ No se detectó micrófono. Usando chatbot por texto (fallback).")
+                    modo_chatbot_texto(sesion_id=sesion_id)
+            elif modo_chat == "senas":
+                print("🤟 Usando chatbot por lenguaje de señas.")
+                modo_chatbot_senas(sesion_id=sesion_id)
         else:
             print("No se pudo crear la sesión. Contacta soporte.")
             hablar("No se pudo crear la sesión. Por favor intenta más tarde.")
