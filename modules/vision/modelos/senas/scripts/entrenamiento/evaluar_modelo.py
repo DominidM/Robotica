@@ -7,23 +7,28 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.normpath(os.path.join(script_dir, "..", "..", "dataset", "landmarks_global.csv"))
     model_path = os.path.normpath(os.path.join(script_dir, "..", "..", "models", "abecedario_model.pkl"))
+
     df = pd.read_csv(data_path)
-    # Evalúa sobre 'valid' si existe y tiene datos, si no sobre todo el dataset
-    if 'partition' in df.columns and (df['partition'] == 'valid').any():
-        eval_df = df[df['partition'] == 'valid']
-        print(f"Evaluando sobre {len(eval_df)} muestras de 'valid'")
-    else:
-        eval_df = df
-        print(f"No hay partición 'valid'. Evaluando sobre todo el dataset ({len(eval_df)} muestras)")
-    X = eval_df.drop(['partition', 'clase'], axis=1, errors='ignore')
-    y = eval_df['clase']
-    if len(X) == 0:
-        print("No hay muestras para evaluar. Revisa tu CSV.")
+    if 'partition' not in df.columns:
+        print("No existe partición 'valid'.")
         return
+    valid_df = df[df['partition'] == 'valid']
+    if len(valid_df) == 0:
+        print("No hay muestras de validación.")
+        return
+
+    X_val = valid_df.drop(['partition', 'clase'], axis=1, errors='ignore')
+    y_val = valid_df['clase']
+
     model = joblib.load(model_path)
-    y_pred = model.predict(X)
-    print("Reporte de clasificación:\n", classification_report(y, y_pred))
-    print("Matriz de confusión:\n", confusion_matrix(y, y_pred))
+
+    y_pred = model.predict(X_val)
+
+    print(f"Evaluando sobre {len(X_val)} muestras de 'valid'")
+    print("Reporte de clasificación:")
+    print(classification_report(y_val, y_pred))
+    print("Matriz de confusión:")
+    print(confusion_matrix(y_val, y_pred))
 
 if __name__ == "__main__":
     main()
