@@ -15,16 +15,6 @@ def borrar_archivos_en_directorio(directorio, extensiones):
                     print(f"Borrada: {path}")
                 except Exception as e:
                     print(f"No se pudo borrar {path}: {e}")
-    # Elimina subcarpetas vacías
-    for root, dirs, files in os.walk(directorio, topdown=False):
-        for d in dirs:
-            subdir = os.path.join(root, d)
-            if not os.listdir(subdir):
-                try:
-                    os.rmdir(subdir)
-                    print(f"Subcarpeta vacía eliminada: {subdir}")
-                except Exception as e:
-                    print(f"No se pudo eliminar {subdir}: {e}")
     return borradas
 
 def main():

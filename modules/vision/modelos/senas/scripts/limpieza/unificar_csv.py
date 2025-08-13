@@ -15,15 +15,24 @@ def main():
     filas = []
     headers = None
 
+    # Lee el CSV global previo (si existe)
+    if os.path.exists(output_csv):
+        with open(output_csv, newline='') as f1:
+            reader1 = csv.reader(f1)
+            headers = next(reader1)
+            filas.extend(reader1)
+
     # Lee el CSV roboflow (roboflow_all_landmarks.csv)
     with open(csv_roboflow, newline='') as f2:
         reader2 = csv.reader(f2)
         h2 = next(reader2)
-        headers = h2
-        for row in reader2:
-            filas.append(row)
+        headers = h2 if headers is None else headers
+        filas.extend(reader2)
 
-    # Escribe el CSV global
+    # Opcional: Eliminar duplicados (por alguna columna identificadora, ej: id)
+    # filas = [list(x) for x in set(tuple(row) for row in filas)]
+
+    # Escribe el CSV global (sobreescribe, pero con todo combinado)
     with open(output_csv, 'w', newline='') as fout:
         writer = csv.writer(fout)
         writer.writerow(headers)
