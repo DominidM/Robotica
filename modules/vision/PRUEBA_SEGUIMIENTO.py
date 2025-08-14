@@ -133,6 +133,37 @@ def distancia_ultrasonido():
         return 400
     return round(distancia, 2)
 
+def prueba_visual_pose():
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+    cap = cv2.VideoCapture(0)
+    print("Prueba visual: mostrando landmarks del cuerpo. Q para salir.")
+    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                print("No se pudo leer el frame de la cámara.")
+                break
+            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(image_rgb)
+            image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+            if results.pose_landmarks:
+                mp_drawing.draw_landmarks(
+                    image_bgr, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                    mp_drawing.DrawingSpec(color=(0,255,0), thickness=2, circle_radius=2),
+                    mp_drawing.DrawingSpec(color=(0,0,255), thickness=2, circle_radius=2)
+                )
+                # Opcional: muestra algunos puntos clave
+                h, w, _ = image_bgr.shape
+                for id, lm in enumerate(results.pose_landmarks.landmark):
+                    cx, cy = int(lm.x * w), int(lm.y * h)
+                    cv2.putText(image_bgr, str(id), (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255,255,0), 1)
+            cv2.imshow('Prueba visual Pose (Q para salir)', image_bgr)
+            if cv2.waitKey(5) & 0xFF == ord('q'):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+
 def seguimiento_por_pose(mostrar=True):
     setup()
     mp_pose = mp.solutions.pose
@@ -162,11 +193,6 @@ def seguimiento_por_pose(mostrar=True):
                 left_hip = lm[mp_pose.PoseLandmark.LEFT_HIP]
                 right_hip = lm[mp_pose.PoseLandmark.RIGHT_HIP]
                 x_centro = int((left_hip.x + right_hip.x) / 2 * ancho)
-
-                # --- Alternativa: tobillos o pies
-                # left_ankle = lm[mp_pose.PoseLandmark.LEFT_ANKLE]
-                # right_ankle = lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
-                # x_centro = int((left_ankle.x + right_ankle.x) / 2 * ancho)
 
                 if x_centro < centro_x_img - 80:
                     movimiento = "Izquierda"
@@ -204,4 +230,9 @@ def seguimiento_por_pose(mostrar=True):
     limpiar()
 
 if __name__ == "__main__":
-    seguimiento_por_pose()
+    print("Opciones:\n1. Prueba visual de cuerpo (solo landmarks)\n2. Seguimiento autónomo")
+    opcion = input("Selecciona una opción (1/2): ").strip()
+    if opcion == "1":
+        prueba_visual_pose()
+    else:
+        seguimiento_por_pose()
