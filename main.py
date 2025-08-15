@@ -24,10 +24,12 @@ from modules.test_psico.test_zung import (
 from modules.chatbot.inferencia import iniciar_chatbot_texto
 from modules.chatbot.voz import iniciar_chatbot_voz, listen, speak
 from modules.vision.seguimiento_persona import seguimiento_por_camara
+from modules.vision.modelos.emociones.scripts.inferencia_emociones import emociones_main
 
 ROBOT_INFO_FILE = "config/robot_info.json"
 USER_SESSION_FILE = "config/usuario_sesion.json"
 SESION_ACTUAL_FILE = "config/sesion_actual.json"
+EMPAREJAMIENTO_FILE = "config/emparejamiento_actual.json"
 
 WIDTH, HEIGHT = 479, 202
 BG_COLOR = (20, 30, 35)
@@ -276,6 +278,41 @@ def seguir_persona():
         print(f"Error en el modo seguimiento: {e}")
         hablar("Ocurrió un error en el modo seguimiento.")
 
+def obtener_emparejamiento_activo(usuario_id, robot_id):
+    url = f"http://localhost:8001/api/emparejamientos/"
+    params = {
+        "usuario_id": usuario_id,
+        "robot_id": robot_id,
+        "estado": "activo"
+    }
+    try:
+        resp = requests.get(url, params=params)
+        if resp.status_code == 200 and resp.json():
+            return resp.json()[0]["id"]
+    except Exception as e:
+        print(f"Error buscando emparejamiento activo: {e}")
+    return None
+
+def crear_emparejamiento(usuario_id, robot_id):
+    empareja_url = "http://localhost:8001/api/emparejamientos/"
+    payload_emparejamiento = {
+        "usuario_id": usuario_id,
+        "robot_id": robot_id,
+        "fecha_inicio": datetime.now().isoformat(),
+        "estado": "activo"
+    }
+    try:
+        resp = requests.post(empareja_url, json=payload_emparejamiento)
+        if resp.status_code == 200:
+            emparejamiento_id = resp.json()["id"]
+            print(f"Emparejamiento creado: ID {emparejamiento_id}")
+            return emparejamiento_id
+        else:
+            print("Error creando emparejamiento:", resp.text)
+    except Exception as e:
+        print(f"Error inesperado creando emparejamiento: {e}")
+    return None
+
 def crear_sesion_api(usuario_id, robot_id):
     url = "http://localhost:8001/api/sesiones/"
     payload = {
@@ -312,11 +349,10 @@ def cerrar_sesion_api(sesion_id):
         print("Error al conectar a la API de cerrar sesión:", e)
 
 def seleccionar_modo_botones(modo_msg):
-    # Botones físicos Raspberry Pi o simulado por teclado
     try:
         import RPi.GPIO as GPIO
-        IZQ_PIN = 17  # botón izquierdo
-        DER_PIN = 27  # botón derecho
+        IZQ_PIN = 17
+        DER_PIN = 27
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(IZQ_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(DER_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -332,7 +368,6 @@ def seleccionar_modo_botones(modo_msg):
                 return "senas"
             time.sleep(0.1)
     except ImportError:
-        # Simulación por teclado para desarrollo
         print(modo_msg)
         hablar(modo_msg)
         print("Selecciona modo: [1] Voz | [2] Lenguaje de señas (simulado)")
@@ -346,7 +381,6 @@ def seleccionar_modo_botones(modo_msg):
                 print("Selección inválida.")
 
 def detectar_letra_por_camara_modelo():
-    # RUTA CORRECTA AL MODELO
     base_dir = os.path.dirname(os.path.abspath(__file__))
     modelo_path = os.path.join(base_dir, "modules", "vision", "modelos", "senas", "models", "abecedario_model.pkl")
     try:
@@ -425,8 +459,56 @@ def modo_chatbot_senas(sesion_id=None):
         else:
             print(f"Seña '{letra_str}' no reconocida como letra o comando.")
 
+def modo_chatbot_voz(sesion_id=None):
+    intentos_micro = 0
+    speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar, 'sígueme' para iniciar el seguimiento o 'detectar emoción' para ver tu emoción.")
+    while True:
+        try:
+            message = listen()
+        except Exception as e:
+            intentos_micro += 1
+            speak("No se pudo acceder al micrófono. Prueba nuevamente o revisa la conexión del micro.")
+            print(f"Error en listen(): {e}")
+            if intentos_micro >= 2:
+                speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
+                print("Cambiando a modo texto automáticamente.")
+                modo_chatbot_texto(sesion_id=sesion_id)
+                return
+            continue
+        if not message:
+            continue
+        if message.lower() in ["detectar emocion", "que emocion tengo", "como me veo"]:
+            print("¡Modo reconocimiento de emociones activado!")
+            speak("Mostrando tu emoción en cámara. Por favor mira al frente.")
+            emocion, cantidad, lista = emociones_main()
+            if emocion != "Desconocido":
+                msg = f"Actualmente presentas mayormente una emoción: {emocion} ({cantidad} de 10)."
+            else:
+                msg = "No se pudo detectar claramente una emoción."
+            print(msg)
+            speak(msg)
+            continue
+        if message.lower() in ["salir", "terminar"]:
+            speak("Hasta luego.")
+            if sesion_id:
+                cerrar_sesion_api(sesion_id)
+            break
+        if comando_seguimiento(message):
+            speak("¡Modo seguimiento activado!")
+            seguir_persona()
+            continue
+        ints = predict_class(message)
+        if not ints or float(ints[0]['probability']) < 0.4:
+            res = retrieval_response(message)
+            speak(res)
+        else:
+            res, tag = get_response(ints)
+            speak(res)
+            if tag == "realizar prueba":
+                pass
+
 def modo_chatbot_texto(sesion_id=None):
-    print("Dimsor por texto iniciado. Escribe 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
+    print("Dimsor por texto iniciado. Escribe 'salir' para terminar o 'sígueme' para iniciar el seguimiento o 'detectar emocion' para ver tu emoción.")
     doing_zung = False
     zung_index = 0
     zung_answers = []
@@ -434,6 +516,17 @@ def modo_chatbot_texto(sesion_id=None):
     while True:
         message = input("Tú: ").strip()
         if not message:
+            continue
+        if message.lower() in ["detectar emocion", "que emocion tengo", "como me veo"]:
+            print("¡Modo reconocimiento de emociones activado!")
+            hablar("Mostrando tu emoción en cámara. Por favor mira al frente.")
+            emocion, cantidad, lista = emociones_main()
+            if emocion != "Desconocido":
+                msg = f"Actualmente presentas mayormente una emoción: {emocion} ({cantidad} de 10)."
+            else:
+                msg = "No se pudo detectar claramente una emoción."
+            print(msg)
+            hablar(msg)
             continue
         if message.lower() in ["salir", "terminar"]:
             print("Hasta luego.")
@@ -494,43 +587,6 @@ def modo_chatbot_texto(sesion_id=None):
                 zung_index = 0
                 zung_answers = []
 
-def modo_chatbot_voz(sesion_id=None):
-    intentos_micro = 0
-    speak("Dimsor por voz iniciado. Puedes decir 'salir' para terminar o 'sígueme' para iniciar el seguimiento.")
-    while True:
-        try:
-            message = listen()
-        except Exception as e:
-            intentos_micro += 1
-            speak("No se pudo acceder al micrófono. Prueba nuevamente o revisa la conexión del micro.")
-            print(f"Error en listen(): {e}")
-            if intentos_micro >= 2:
-                speak("No fue posible acceder al micrófono. Cambiando al modo texto.")
-                print("Cambiando a modo texto automáticamente.")
-                modo_chatbot_texto(sesion_id=sesion_id)
-                return
-            continue
-        if not message:
-            continue
-        if message.lower() in ["salir", "terminar"]:
-            speak("Hasta luego.")
-            if sesion_id:
-                cerrar_sesion_api(sesion_id)
-            break
-        if comando_seguimiento(message):
-            speak("¡Modo seguimiento activado!")
-            seguir_persona()
-            continue
-        ints = predict_class(message)
-        if not ints or float(ints[0]['probability']) < 0.4:
-            res = retrieval_response(message)
-            speak(res)
-        else:
-            res, tag = get_response(ints)
-            speak(res)
-            if tag == "realizar prueba":
-                pass
-
 def obtener_info_usuario(registro_key):
     url = f"http://localhost:8001/api/usuarios/?registro_key={registro_key}"
     try:
@@ -589,7 +645,7 @@ def main():
                     respuesta = input("Confirma: Ingresa SI para confirmar, NO para repetir: ").strip().upper()
                     confirmado = respuesta == "SI"
             elif modo_login == "senas":
-                confirmado = True  # Ya confirmado en capturar_nombre_por_senas
+                confirmado = True
             if confirmado:
                 hablar(f"Perfecto, {nombre}. Procedo a registrarte.")
                 nombre_confirmado = True
@@ -652,6 +708,7 @@ def main():
     rol_valido = False
     usuario_info = None
     sesion_id = None
+    emparejamiento_id = None
     if registro_key:
         usuario_info = obtener_info_usuario(registro_key)
         if usuario_info and usuario_info.get("rol_id") == 3:
@@ -661,6 +718,19 @@ def main():
             hablar("Debes completar tu registro en la página web o en el aplicativo móvil antes de continuar.")
 
     if rol_valido:
+        # --- Emparejamiento PERMANENTE ---
+        emparejamiento_data = leer_info_local(EMPAREJAMIENTO_FILE)
+        emparejamiento_id = None
+        if emparejamiento_data and "emparejamiento_id" in emparejamiento_data:
+            emparejamiento_id = emparejamiento_data["emparejamiento_id"]
+        else:
+            emparejamiento_id = obtener_emparejamiento_activo(usuario_info["id"], robot_id)
+            if not emparejamiento_id:
+                emparejamiento_id = crear_emparejamiento(usuario_info["id"], robot_id)
+            if emparejamiento_id:
+                guardar_info_local({"emparejamiento_id": emparejamiento_id}, EMPAREJAMIENTO_FILE)
+        # --- Fin Emparejamiento ---
+
         sesion_id = crear_sesion_api(usuario_info["id"], robot_id)
         if sesion_id:
             guardar_info_local({"sesion_id": sesion_id}, SESION_ACTUAL_FILE)

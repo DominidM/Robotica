@@ -203,5 +203,8 @@ def seguimiento_por_pose(mostrar=True):
     cv2.destroyAllWindows()
     limpiar()
 
+# Alias para compatibilidad con main.py
+seguimiento_por_camara = seguimiento_por_pose
+
 if __name__ == "__main__":
     seguimiento_por_pose()
